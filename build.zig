@@ -20,6 +20,22 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const sdl_dep = b.dependency("sdl", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const sdl_lib = sdl_dep.artifact("SDL3");
+
+    const sdl_translate = b.addTranslateC(.{
+        .root_source_file = b.path("src/sdl.h"),
+        .target = target,
+        .optimize = optimize,
+    });
+    sdl_translate.addIncludePath(sdl_dep.path("include"));
+    sdl_translate.defineCMacro("__X86INTRIN_H", null);
+
+
     const exe = b.addExecutable(.{
         .name = "blade-and-mana",
         .root_module = b.createModule(.{
@@ -28,6 +44,9 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+
+    exe.root_module.addImport("sdl", sdl_translate.createModule());
+    exe.root_module.linkLibrary(sdl_lib);
 
     b.installArtifact(exe);
 }
