@@ -1,4 +1,4 @@
-// This is the entrypoint for the game.
+// main.zig is the entrypoint for the game.
 // Copyright (C) 2026 solosrc.com
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,35 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-const sdl = @import("sdl");
+const engine = @import("engine");
 
 pub fn main() !void {
-    if (!sdl.SDL_Init(sdl.SDL_INIT_VIDEO)) {
-        sdl.SDL_Log("Error initializing SDL: %s", sdl.SDL_GetError());
-        return;
-    }
+    var game = try engine.Game.init();
+    defer game.deinit();
 
-    const window = sdl.SDL_CreateWindow("Blade & Mana", 800, 600, 0) orelse {
-        sdl.SDL_LogCritical(
-            sdl.SDL_LOG_CATEGORY_APPLICATION,
-            "Cannot create window: %s",
-            sdl.SDL_GetError(),
-        );
-        return;
-    };
-    
-    var done: bool = false;
-    while (!done) {
-        var event: sdl.SDL_Event = undefined;
-
-        while (sdl.SDL_PollEvent(&event)) {
-            if (event.type == sdl.SDL_EVENT_QUIT) {
-                done = true;
-            }
-        }
-    }
-
-    sdl.SDL_DestroyWindow(window);
-    sdl.SDL_Quit();
+    game.run();
 }
-

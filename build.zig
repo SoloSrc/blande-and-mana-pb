@@ -1,4 +1,4 @@
-// This is the build script that gives the recipe to build the game from sauce.
+// build.zig gives the recipe to build the game from sauce.
 // Copyright (C) 2026 solosrc.com
 //
 // This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,14 @@ pub fn build(b: *std.Build) void {
     sdl_translate.addIncludePath(sdl_dep.path("include"));
     sdl_translate.defineCMacro("__X86INTRIN_H", null);
 
+    const engine_mod = b.addModule("engine", .{
+        .root_source_file = b.path("src/engine.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    engine_mod.addImport("sdl", sdl_translate.createModule());
+    engine_mod.linkLibrary(sdl_lib);
 
     const exe = b.addExecutable(.{
         .name = "blade-and-mana",
@@ -42,13 +50,14 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
+            .imports = &.{
+                .{
+                    .name = "engine",
+                    .module = engine_mod,
+                },
+            },
         }),
     });
 
-    exe.root_module.addImport("sdl", sdl_translate.createModule());
-    exe.root_module.linkLibrary(sdl_lib);
-
     b.installArtifact(exe);
 }
-
-
