@@ -16,13 +16,17 @@
 
 const sdl = @import("sdl");
 
-window: *sdl.SDL_Window,
+window: ?*sdl.SDL_Window,
 
 const Game = @This();
 
 pub const InitError = error{
     SdlInitFailed,
+};
+
+pub const WindowError = error{
     WindowCreationFailed,
+    WindowDuplicated,
 };
 
 pub fn init() InitError!Game {
@@ -34,9 +38,35 @@ pub fn init() InitError!Game {
         );
         return error.SdlInitFailed;
     }
-    errdefer sdl.SDL_Quit();
 
-    const window = sdl.SDL_CreateWindow("Blade & Mana", 800, 600, 0) orelse {
+    return .{
+        .window = null,
+    };
+}
+
+pub fn deinit(self: *Game) void {
+    if (self.window) |window| {
+        sdl.SDL_DestroyWindow(window);
+    }
+    sdl.SDL_Quit();
+    self.* = undefined;
+}
+
+pub fn createWindow(
+    self: *Game,
+    name: [:0]const u8,
+    width: u32,
+    height: u32,
+) WindowError!void {
+    if (self.window != null) {
+        return error.WindowDuplicated;
+    }
+    const window = sdl.SDL_CreateWindow(
+        name,
+        @intCast(width),
+        @intCast(height),
+        0,
+    ) orelse {
         sdl.SDL_LogError(
             sdl.SDL_LOG_CATEGORY_APPLICATION,
             "Cannot create window: %s",
@@ -44,16 +74,7 @@ pub fn init() InitError!Game {
         );
         return error.WindowCreationFailed;
     };
-
-    return .{
-        .window = window,
-    };
-}
-
-pub fn deinit(self: *Game) void {
-    sdl.SDL_DestroyWindow(self.window);
-    sdl.SDL_Quit();
-    self.* = undefined;
+    self.window = window;
 }
 
 pub fn run(_: *const Game) void {

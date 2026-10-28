@@ -20,5 +20,6 @@ pub fn main() !void {
     var game = try engine.Game.init();
     defer game.deinit();
 
+    try game.createWindow("Blade & Mana", 800, 600);
     game.run();
 }
